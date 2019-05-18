@@ -1,0 +1,242 @@
+//$------------------------------------------------------------------$
+//|                                       Squeez Bounce Detector.mq4 |
+//|                     Copyright 2018, MohamedEgyForex (Click Here) |
+//|                           https://www.fiverr.com/mohamedegyforex |
+//$------------------------------------------------------------------$
+#property version   "1.00"
+#property strict
+#property indicator_separate_window
+#property indicator_minimum 0
+#property indicator_maximum 1
+//#define HISTOGRAM_WIDTH 2
+#property indicator_height 110
+#define Q1 0
+#define Q2 0.25
+#define Q3 0.75
+#define Q4 1
+#property indicator_buffers 3
+#property indicator_plots   3
+//--- plot BullishTrend
+#property indicator_label1  "BullishTrend"
+#property indicator_type1   DRAW_ARROW
+#property indicator_color1  clrYellow
+#property indicator_style1  STYLE_SOLID
+#property indicator_width1  1
+//--- plot BearishTrend
+#property indicator_label2  "BearishTrend"
+#property indicator_type2   DRAW_ARROW
+#property indicator_color2  clrBlue
+#property indicator_style2  STYLE_SOLID
+#property indicator_width2  1
+//--- plot TrendDirection
+#property indicator_label3  "TrendDirection"
+#property indicator_type3   DRAW_LINE
+#property indicator_color3  clrDarkSlateGray
+#property indicator_style3  STYLE_SOLID
+#property indicator_width3  2
+//
+//---
+input bool  Show_All_Bars=false;
+input int   CalculatedBars=1000;
+//--- indicator buffers
+double         BullishTrendBuffer[];
+double         BearishTrendBuffer[];
+double         TrendDirectionBuffer[];
+double         BounceBuyTF1Buffer[];
+double         BounceSellTF1Buffer[];
+double         BounceBuyH4Buffer[];
+double         BounceSellH4Buffer[];
+double         BounceBuyD1Buffer[];
+double         BounceSellD1Buffer[];
+double         Line1Buffer[];
+double         Line2Buffer[];
+string Name;
+//$------------------------------------------------------------------$
+//| Custom indicator initialization function                         |
+//$------------------------------------------------------------------$
+int OnInit()
+  {
+//---
+Name="Squeeze Bounce Detector";
+IndicatorShortName(Name);
+Draw_Label_("Background","gggggggggggg",2,2,clrWhite);
+Draw_Label("Title","Squeeze Bounce Detector",2,2,clrBlack);
+
+//Chart Auto Layout
+   ChartSetInteger(0,CHART_MODE,CHART_CANDLES);
+   ChartSetInteger(0,CHART_COLOR_BACKGROUND,clrGray);
+   ChartSetInteger(0,CHART_COLOR_FOREGROUND,clrBlack);
+   ChartSetInteger(0,CHART_COLOR_GRID,clrYellow);
+   ChartSetInteger(0,CHART_COLOR_CHART_UP,clrBlack);
+   ChartSetInteger(0,CHART_COLOR_CHART_DOWN,clrBlack);
+   ChartSetInteger(0,CHART_COLOR_CANDLE_BULL,clrDarkGreen);
+   ChartSetInteger(0,CHART_COLOR_CANDLE_BEAR,clrRed);
+   ChartSetInteger(0,CHART_COLOR_CHART_LINE,clrBlack);
+   ChartSetInteger(0,CHART_COLOR_VOLUME,clrLimeGreen);
+   ChartSetInteger(0,CHART_COLOR_ASK,clrYellow);
+   ChartSetInteger(0,CHART_COLOR_STOP_LEVEL,clrRed);
+//---
+   ChartSetInteger(0,CHART_FOREGROUND,false);
+   ChartSetInteger(0,CHART_SHIFT,true);
+   ChartSetInteger(0,CHART_SHOW_OBJECT_DESCR,true);
+//ChartSetInteger(0,CHART_SHOW_PERIOD_SEP,true);
+   ChartSetInteger(0,CHART_SHOW_GRID,false);
+//---
+   IndicatorDigits(Digits+2);
+//--- indicator buffers mapping
+   SetIndexBuffer(0,BullishTrendBuffer);
+   SetIndexBuffer(1,BearishTrendBuffer);
+   SetIndexBuffer(2,TrendDirectionBuffer);
+   SetIndexBuffer(3,BounceBuyTF1Buffer);
+   SetIndexBuffer(4,BounceSellTF1Buffer);
+   SetIndexBuffer(5,BounceBuyH4Buffer);
+   SetIndexBuffer(6,BounceSellH4Buffer);
+   SetIndexBuffer(7,BounceBuyD1Buffer);
+   SetIndexBuffer(8,BounceSellD1Buffer);
+   SetIndexBuffer(9,Line1Buffer);
+   SetIndexBuffer(10,Line2Buffer);
+//---
+   SetIndexArrow(0,116);
+   SetIndexArrow(1,116);
+//---
+   SetIndexArrow(3,140);
+   SetIndexArrow(4,140);
+   SetIndexArrow(5,141);
+   SetIndexArrow(6,141);
+   SetIndexArrow(7,142);
+   SetIndexArrow(8,142);
+//---
+   SetLevelStyle(2,0,clrWhite);
+   //SetLevelValue(0,0);
+   //SetLevelValue(1,1);
+   SetLevelValue(0,0.5);
+   //SetLevelValue(3,-2);
+   //SetLevelValue(4,-3);
+//---
+   return(INIT_SUCCEEDED);
+  }
+//$------------------------------------------------------------------$
+//| Custom indicator iteration function                              |
+//$------------------------------------------------------------------$
+int start()
+  {
+///--------------------
+   int limit=Bars-20;
+   int i=0;
+//--- Main Loop
+   for(i=BarLimit(); i>=1; i--)
+     {//For Start
+      //---
+      if(MACD(i)>0)
+        {
+         if//Position Based On Stochastic
+         (
+          StochasticStrength(i)>=0 && StochasticStrength(i)<25
+          )
+           {
+            BullishTrendBuffer[i]=Q1;
+           }
+         //---
+         if//Position Based On Stochastic
+         (
+          StochasticStrength(i)>25 && StochasticStrength(i)<50
+          )
+           {
+            BullishTrendBuffer[i]=Q2;
+           }
+         //---
+         if//Position Based On Stochastic
+         (
+          StochasticStrength(i)>50 && StochasticStrength(i)<75
+          )
+           {
+            BullishTrendBuffer[i]=Q3;
+           }
+         //---
+         if//Position Based On Stochastic
+         (
+          StochasticStrength(i)>75 && StochasticStrength(i)<=100
+          )
+           {
+            BullishTrendBuffer[i]=Q4;
+           }
+         //---
+         TrendDirectionBuffer[i]=BullishTrendBuffer[i];
+        }
+      //---
+      if(MACD(i)<0)
+        {
+         if//Position Based On Stochastic
+         (
+          StochasticStrength(i)>=0 && StochasticStrength(i)<25
+          )
+           {
+            BearishTrendBuffer[i]=Q1;
+           }
+         //---
+         if//Position Based On Stochastic
+         (
+          StochasticStrength(i)>25 && StochasticStrength(i)<50
+          )
+           {
+            BearishTrendBuffer[i]=Q2;
+           }
+         //---
+         if//Position Based On Stochastic
+         (
+          StochasticStrength(i)>50 && StochasticStrength(i)<75
+          )
+           {
+            BearishTrendBuffer[i]=Q3;
+           }
+         //---
+         if//Position Based On Stochastic
+         (
+          StochasticStrength(i)>75 && StochasticStrength(i)<=100
+          )
+           {
+            BearishTrendBuffer[i]=Q4;
+           }
+         //---
+         TrendDirectionBuffer[i]=BearishTrendBuffer[i];
+        }
+      //---
+     }//For End
+//--- return value of prev_calculated for next call
+   return(0);
+  }
+//$------------------------------------------------------------------$
+
+double MACD(int i){return(iMACD(Symbol(),Period(),5,15,1,PRICE_CLOSE,MODE_MAIN,i));}
+double StochasticStrength(int i){return(iStochastic(Symbol(),Period(),14,3,3,MODE_EMA,STO_CLOSECLOSE,MODE_MAIN,i));}
+//+------------------------------------------------------------------+
+int BarLimit()
+  {
+   int AllBars=0;
+   if(Show_All_Bars)AllBars=Bars-100;
+   if(!Show_All_Bars)AllBars=CalculatedBars;
+   return(AllBars);
+  }
+//+------------------------------------------------------------------+
+
+
+void Draw_Label(string Object_Name,string Content,int X_Distance,int Y_Distance,color Color)
+  {
+   ObjectDelete(Object_Name);
+   ObjectCreate(Object_Name,OBJ_LABEL,WindowFind(Name),0,0);
+   ObjectSet(Object_Name,OBJPROP_CORNER,0);
+   ObjectSet(Object_Name,OBJPROP_XDISTANCE,X_Distance);
+   ObjectSet(Object_Name,OBJPROP_YDISTANCE,Y_Distance);
+   ObjectSetText(Object_Name,Content,10,"Arial Black",Color);
+  }
+  
+  
+  void Draw_Label_(string Object_Name,string Content,int X_Distance,int Y_Distance,color Color)
+  {
+   ObjectDelete(Object_Name);
+   ObjectCreate(Object_Name,OBJ_LABEL,WindowFind(Name),0,0);
+   ObjectSet(Object_Name,OBJPROP_CORNER,0);
+   ObjectSet(Object_Name,OBJPROP_XDISTANCE,X_Distance);
+   ObjectSet(Object_Name,OBJPROP_YDISTANCE,Y_Distance);
+   ObjectSetText(Object_Name,Content,12,"Webdings",Color);
+  }
